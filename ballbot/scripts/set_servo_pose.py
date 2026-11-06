@@ -10,6 +10,7 @@ Usage:
     python3 set_servo_pose.py --hold       # hold torque until Enter / Ctrl+C
 """
 
+import os
 import sys
 import time
 import argparse
@@ -68,8 +69,11 @@ def main():
         print(f"[ERROR] Failed to initialize ServoKit: {e}", file=sys.stderr)
         sys.exit(1)
 
-    # Channels: s1=13, s2=15, s3=14
-    channels = {"s1": 13, "s2": 15, "s3": 14}
+    # Channels: s1=0, s2=1, s3=2
+    ch1 = int(os.environ.get("BALLBOT_CH1", "0"))
+    ch2 = int(os.environ.get("BALLBOT_CH2", "1"))
+    ch3 = int(os.environ.get("BALLBOT_CH3", "2"))
+    channels = {"s1": ch1, "s2": ch2, "s3": ch3}
     servos = {}
 
     target_angle = max(0.0, min(float(args.actuation_range), args.angle))

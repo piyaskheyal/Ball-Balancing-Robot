@@ -112,11 +112,14 @@ class RobotController:
         self.s1 = self.s2 = self.s3 = None
         if self.hw_enabled:
             self.kit = ServoKit(channels=16)
-            self.s1 = self.kit.servo[13]
-            self.s2 = self.kit.servo[15]
-            self.s3 = self.kit.servo[14]
+            ch1 = int(os.getenv("BALLBOT_CH1", "0"))
+            ch2 = int(os.getenv("BALLBOT_CH2", "1"))
+            ch3 = int(os.getenv("BALLBOT_CH3", "2"))
+            self.s1 = self.kit.servo[ch1]
+            self.s2 = self.kit.servo[ch2]
+            self.s3 = self.kit.servo[ch3]
             for s in (self.s1, self.s2, self.s3):
-                s.actuation_range = 270
+                s.actuation_range = 180
                 s.set_pulse_width_range(500, 2500)
 
         # Debug / bookkeeping
