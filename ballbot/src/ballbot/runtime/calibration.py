@@ -69,8 +69,8 @@ def safe_exit(rc, stdscr, put):
 
     rc.robot.solve_inverse_kinematics_spherical(theta, phi, h)
     angles = [
-        math.degrees(math.pi * 0.5 - rc.robot.theta1),
         math.degrees(math.pi * 0.5 - rc.robot.theta2),
+        math.degrees(math.pi * 0.5 - rc.robot.theta1),
         math.degrees(math.pi * 0.5 - rc.robot.theta3),
     ]
     rc.set_motor_angles(*angles)
@@ -149,8 +149,8 @@ def main(stdscr):
 
             rc.robot.solve_inverse_kinematics_spherical(theta, phi, h)
             angles = [
-                math.degrees(math.pi * 0.5 - rc.robot.theta1),
                 math.degrees(math.pi * 0.5 - rc.robot.theta2),
+                math.degrees(math.pi * 0.5 - rc.robot.theta1),
                 math.degrees(math.pi * 0.5 - rc.robot.theta3),
             ]
             rc.set_motor_angles(*angles)
@@ -229,8 +229,8 @@ def main(stdscr):
                         REFERENCE_POSE["phi"],
                         REFERENCE_POSE["h"]
                     )
-                    a1 = math.degrees(math.pi * 0.5 - rc.robot.theta1)
-                    a2 = math.degrees(math.pi * 0.5 - rc.robot.theta2)
+                    a1 = math.degrees(math.pi * 0.5 - rc.robot.theta2)
+                    a2 = math.degrees(math.pi * 0.5 - rc.robot.theta1)
                     a3 = math.degrees(math.pi * 0.5 - rc.robot.theta3)
 
                     rc.cal["s1"]["zero"] = round(a1, 4)

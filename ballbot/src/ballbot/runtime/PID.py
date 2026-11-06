@@ -2,11 +2,12 @@ import math
 import time
 
 class PIDcontroller:
-    def __init__(self, kp, ki, kd, alpha, beta, max_theta, conversion="linear"):
+    def __init__(self, kp, ki, kd, alpha, beta, max_theta, conversion="linear", camera_rotation_deg=0.0):
         self.kp, self.ki, self.kd = kp, ki, kd
         self.alpha = alpha
         self.beta = beta
         self.max_theta = max_theta
+        self.camera_rotation_deg = float(camera_rotation_deg)
 
         if conversion == "linear":
             self.magnitude_convert = 1
@@ -71,10 +72,9 @@ class PIDcontroller:
         filtered_x = self.alpha * pid_x + (1 - self.alpha) * self.prev_out_x
         filtered_y = self.alpha * pid_y + (1 - self.alpha) * self.prev_out_y
 
-        # Convert to spherical coordinates
-        phi = math.degrees(math.atan2(filtered_y, filtered_x))
-        if phi < 0:
-            phi += 360.0
+        # Convert to spherical coordinates with camera orientation compensation
+        raw_phi = math.degrees(math.atan2(filtered_y, filtered_x))
+        phi = (raw_phi - self.camera_rotation_deg) % 360.0
 
         r = math.sqrt(filtered_x**2 + filtered_y**2)
         if self.magnitude_convert == 1:

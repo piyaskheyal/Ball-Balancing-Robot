@@ -141,7 +141,12 @@ x, y = x_t, y_t
 print(f"[PID] kp={kp} ki={ki} kd={kd} alpha={alpha} beta={beta}", flush=True)
 print(f"[CAM] Target setpoint: ({x_t}, {y_t})", flush=True)
 
-PID = PIDcontroller(kp, ki, kd, alpha, beta, max_theta=model.maxtheta, conversion="tanh")
+PID = PIDcontroller(
+    kp, ki, kd, alpha, beta,
+    max_theta=model.maxtheta,
+    conversion="tanh",
+    camera_rotation_deg=cam_cfg.get("camera_rotation_deg", 0.0)
+)
 
 # Ensure subsystems start quiet (foreground keys toggle these)
 cam.debug = False

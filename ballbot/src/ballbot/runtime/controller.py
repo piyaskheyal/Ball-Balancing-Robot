@@ -256,9 +256,13 @@ class RobotController:
         if not self.armed:
             return
         self.robot.solve_inverse_kinematics_spherical(theta, phi, h)
+        # Physical servo mapping:
+        # s1 (Ch0) is physical arm at +X (kinematics theta2)
+        # s2 (Ch1) is physical arm at +Y (kinematics theta1)
+        # s3 (Ch2) is physical arm at -X,-Y (kinematics theta3)
         angles = [
-            math.degrees(math.pi * 0.5 - self.robot.theta1),
             math.degrees(math.pi * 0.5 - self.robot.theta2),
+            math.degrees(math.pi * 0.5 - self.robot.theta1),
             math.degrees(math.pi * 0.5 - self.robot.theta3),
         ]
         self.set_motor_angles(*angles)
@@ -268,8 +272,8 @@ class RobotController:
             return
         self.robot.solve_inverse_kinematics_spherical(theta, phi, h)
         angles = [
-            math.degrees(math.pi * 0.5 - self.robot.theta1),
             math.degrees(math.pi * 0.5 - self.robot.theta2),
+            math.degrees(math.pi * 0.5 - self.robot.theta1),
             math.degrees(math.pi * 0.5 - self.robot.theta3),
         ]
         self.interpolate_time(angles, duration=t)

@@ -3,6 +3,12 @@
   "target_y": 76.27,
   "platform_center_x": 93.93,
   "platform_center_y": 76.27,
+  "camera_rotation_deg": -17.4,
+  "servo_positions_deg": {
+    "s1": 338.9,
+    "s2": 106.2,
+    "s3": 222.7
+  },
   "samples": 30,
   "std_x": 0.36,
   "std_y": 0.68
