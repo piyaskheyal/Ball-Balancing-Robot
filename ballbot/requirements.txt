@@ -1,7 +1,10 @@
 flask
 flask-cors
-numpy
+numpy<2
 pyqtgraph
 adafruit-blinka
 adafruit-circuitpython-servokit
 adafruit-circuitpython-pca9685
+gpiod>=2.2.2,<3
+Adafruit-Blinka-Raspberry-Pi-PWM>=1.0.2
+Adafruit-Blinka-Raspberry-Pi5-Neopixel

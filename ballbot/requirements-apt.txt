@@ -7,6 +7,7 @@ python3-pip
 libcamera-apps
 libcamera-dev
 python3-picamera2
+python3-opencv
 
 # I2C tools (PCA9685 debug)
 i2c-tools
