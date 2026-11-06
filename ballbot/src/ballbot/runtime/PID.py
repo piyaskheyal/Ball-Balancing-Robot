@@ -47,9 +47,11 @@ class PIDcontroller:
             # When theta=0, phi is irrelevant; keep 0 for determinism
             return 0.0, 0.0
            
-        # Errors (keeping your sign convention)
-        err_x = current[0] - target[0]
-        err_y = current[1] - target[1]
+        # Stabilizing negative feedback convention:
+        # err = target - current ensures that if the ball drifts in any direction,
+        # the kinematics tilts that side UP to create a restoring downhill slope to the center.
+        err_x = target[0] - current[0]
+        err_y = target[1] - current[1]
 
         # Integral (once!)
         self.sum_err_x += err_x * dt
