@@ -1,2 +1,4 @@
 .context/
 .venv/
+ai_chat.md
+**/__pycache__
