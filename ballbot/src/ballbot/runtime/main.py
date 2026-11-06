@@ -78,12 +78,15 @@ mon = DebugMonitor()
 
 
 # ----------------------------
-# PID config (JSON) loader
+# Camera & PID config (JSON) loader
 # ----------------------------
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 PID_DEFAULTS = {"kp": 0.0063, "ki": 0.00005, "kd": 0.006025, "alpha": 0.65, "beta": 0.3}
 PID_PATH = os.getenv("BALLBOT_PID", str(REPO_ROOT / "config" / "pid.json"))
+
+CAM_DEFAULTS = {"target_x": 104.0, "target_y": 80.0}
+CAM_PATH = os.getenv("BALLBOT_CAM", str(REPO_ROOT / "config" / "camera.json"))
 
 
 def load_pid(path: str, defaults: dict) -> dict:
@@ -103,6 +106,21 @@ def load_pid(path: str, defaults: dict) -> dict:
         return defaults.copy()
 
 
+def load_cam(path: str, defaults: dict) -> dict:
+    p = Path(path)
+    if not p.exists():
+        return defaults.copy()
+    try:
+        data = json.loads(p.read_text())
+        out = defaults.copy()
+        for k in defaults.keys():
+            if k in data:
+                out[k] = float(data[k])
+        return out
+    except Exception as e:
+        return defaults.copy()
+
+
 # ----------------------------
 # Initialize subsystems (order matters)
 # ----------------------------
@@ -116,7 +134,12 @@ pid_cfg = load_pid(PID_PATH, PID_DEFAULTS)
 kp, ki, kd = pid_cfg["kp"], pid_cfg["ki"], pid_cfg["kd"]
 alpha, beta = pid_cfg["alpha"], pid_cfg["beta"]
 
+cam_cfg = load_cam(CAM_PATH, CAM_DEFAULTS)
+x_t, y_t = (cam_cfg["target_x"], cam_cfg["target_y"])
+x, y = x_t, y_t
+
 print(f"[PID] kp={kp} ki={ki} kd={kd} alpha={alpha} beta={beta}", flush=True)
+print(f"[CAM] Target setpoint: ({x_t}, {y_t})", flush=True)
 
 PID = PIDcontroller(kp, ki, kd, alpha, beta, max_theta=model.maxtheta, conversion="tanh")
 
@@ -138,10 +161,6 @@ preview_lock = threading.Lock()
 
 running = True
 mask_windows_open = False
-
-# State
-x, y = 100, 75
-x_t, y_t = (100, 75)
 
 
 def update_robot_pos(x_t, y_t, x, y, valid):

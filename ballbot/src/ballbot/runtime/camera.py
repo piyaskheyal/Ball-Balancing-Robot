@@ -21,6 +21,24 @@ class Camera:
         self.queue = deque(maxlen=16)
         self.queue.append((100, 75))
 
+        self.center_x = 100
+        self.center_y = 75
+        self.platform_radius = 75
+
+        try:
+            import json
+            from pathlib import Path
+            cfg_path = os.getenv("BALLBOT_CAM", str(Path(__file__).resolve().parents[3] / "config" / "camera.json"))
+            if os.path.exists(cfg_path):
+                data = json.loads(Path(cfg_path).read_text())
+                if "target_x" in data and "target_y" in data:
+                    self.center_x = int(round(float(data["target_x"])))
+                    self.center_y = int(round(float(data["target_y"])))
+                    self.queue.clear()
+                    self.queue.append((self.center_x, self.center_y))
+        except Exception:
+            pass
+
         self.debug = False
         self.debug_mask = False
         self._last_debug_time = 0.0
@@ -110,32 +128,66 @@ class Camera:
         cv2.destroyAllWindows()
 
     def coordinate(self, image):
-        frame_blurred = cv2.GaussianBlur(image, (3, 3), 0)
+        # 1. Primary Detector: Robust Hough Circle Detection
+        frame_gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+        blurred = cv2.medianBlur(frame_gray, 5)
 
+        circles = cv2.HoughCircles(
+            blurred,
+            cv2.HOUGH_GRADIENT,
+            dp=1,
+            minDist=20,
+            param1=50,
+            param2=20,
+            minRadius=10,
+            maxRadius=35,
+        )
+
+        if circles is not None:
+            c_arr = np.uint16(np.around(circles))[0]
+            valid_circles = []
+            for c in c_arr:
+                cx, cy, r = int(c[0]), int(c[1]), int(c[2])
+                dist = np.hypot(cx - self.center_x, cy - self.center_y)
+                # Keep detections within the platform bounds (~75px radius)
+                if dist <= self.platform_radius:
+                    valid_circles.append((dist, (cx, cy)))
+
+            if valid_circles:
+                # Pick the circle closest to the platform center / expected trajectory
+                valid_circles.sort(key=lambda item: item[0])
+                best_center = valid_circles[0][1]
+                self.queue.append(best_center)
+                return best_center[0], best_center[1], True
+
+        # 2. Secondary Fallback: Platform-Masked Color / Threshold Contour Detection
+        frame_blurred = cv2.GaussianBlur(image, (3, 3), 0)
         frame_hsv = cv2.cvtColor(frame_blurred, cv2.COLOR_RGB2HSV)
-        frame_gray = cv2.cvtColor(frame_blurred, cv2.COLOR_RGB2GRAY)
 
         mask_hsv = cv2.inRange(frame_hsv, self.lower_black, self.upper_black)
         mask_gray = cv2.threshold(frame_gray, self.gray_threshold, 255, cv2.THRESH_BINARY_INV)[1]
         mask_combined = cv2.bitwise_or(mask_hsv, mask_gray)
 
+        # Restrict search strictly to inside the circular platform
+        h_img, w_img = frame_gray.shape
+        roi_mask = np.zeros((h_img, w_img), dtype=np.uint8)
+        cv2.circle(roi_mask, (self.center_x, self.center_y), self.platform_radius, 255, -1)
+        mask_combined = cv2.bitwise_and(mask_combined, mask_combined, mask=roi_mask)
+
         mask_eroded = cv2.erode(mask_combined, None, iterations=1)
         mask_dilated = cv2.dilate(mask_eroded, None, iterations=1)
 
         if getattr(self, "debug_mask", False):
-            # store for main thread to display
             self._dbg_mask = mask_dilated
             self._dbg_gray = frame_gray
 
         valid_detections = []
         contours, _ = cv2.findContours(mask_dilated.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-        best_dbg = None
-
         for contour in contours:
             (cx, cy), radius = cv2.minEnclosingCircle(contour)
             radius = int(radius)
-            if radius < 5 or radius > 100:
+            if radius < 8 or radius > 45:
                 continue
 
             area = cv2.contourArea(contour)
@@ -144,11 +196,8 @@ class Camera:
                 continue
 
             circularity = (4 * np.pi * area) / (perimeter ** 2)
-            if circularity < 0.6:
+            if circularity < 0.5:
                 continue
-
-            if best_dbg is None or area > best_dbg[0]:
-                best_dbg = (area, radius, circularity)
 
             x, y, w, h = cv2.boundingRect(contour)
             valid_detections.append((area, (int(x + w / 2), int(y + h / 2))))
